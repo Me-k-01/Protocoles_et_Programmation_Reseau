@@ -1,7 +1,15 @@
-# Projet 2022-2023 de Protocoles & Programmation Réseau
+## Procédure pour permettre la détection du proxy
 
-Ce projet a été réalisé dans le cadre de l'UE Protocoles et programmation Réseau.
-Trois étudiants ont participés a ce projet:
-- Florian AUBERVAL
-- Romain SIAUDEAU
-- Timothée BEHUET
+Pour permettre à notre proxy d'être détecté par notre navigateur, il faut que le navigateur le detecte:
+
+	Sur Firefox
+
+	Paramètres -> (section)Paramètres réseau -> Parmaètres... -> configuration manuelle du proxy
+	Mettre 0.0.0.0 et port 80 (cocher pour utiliser ce protocole pour HTTPS)
+
+Puis pour lance le proxy faire dans un terminal
+
+	sudo python3 proxy.py
+ 
+
+## Commentaire divers des dev
