@@ -1,11 +1,11 @@
 #!/usr/bin/python3
-import socket, re
+import socket
 
 IP_PROXY = 'localhost' 
 PORT_PROXY = 8000
 
 ############### Fonctions ###############
-def rcvall(socket) :
+'''def rcvall(socket) :
     rep = []
 
     while True :
@@ -15,7 +15,7 @@ def rcvall(socket) :
         rep.append(reponse)
         
     return  b''.join(rep)
-
+'''
 
 def formatRequest(request):
     # Isolement de chaque partie de la reponse séparé par \r\n ,
@@ -71,7 +71,7 @@ while True:
         print("Requête vide")
         socket_client.close()
         continue
-    
+
     print("Requête reçu: ", request)  
     print("Requête à faire: ", msg_to_send)  
     dest = getHost(msg_to_send) 
