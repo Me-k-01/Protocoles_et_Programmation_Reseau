@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import socket, subprocess, base64, sys
+import socket, subprocess, base64, sys, re
 
 
 ma_socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM,socket.IPPROTO_TCP)
@@ -11,29 +11,46 @@ ma_socket.listen(socket.SOMAXCONN)
 
 while True:
     client_co,addres = ma_socket.accept()
-    print ("Nouvelle connexion depuis ",addres)
+    #print ("Nouvelle connexion depuis ",addres)
     
-    request=client_co.recv(1000).decode()
-    print(request)
+    #request=client_co.recv(1000).decode()
+    request=client_co.recv(1000)
     
+    #je vais isoler chaque partie de la reponse sepaere par \r\n pour retirer les lignes commençant par Connection:keep-alive et Proxy-					connection:keep_alive    
+    r=request.decode('utf-8')
+    element=r.split('\r\n')
+    element.remove(element[3])
+    element.remove(element[2])
     
-    response='HTTP/1.1 200 OK\n'
-    client_co.sendall(response.encode())
+    #on extrait l'adresse du serveur pour se connecter dessus
+    host=re.search('(?<=: )[^\]]+',element[2])
+    
+    #on recompose le message à envoyer au serveur
+    e='\r\n'.join(element)
+    e=e.encode('utf-8')
+    
+    #print(request.decode())
+    #print(element)
+    #print(host[0])
+    print(e)
+    
+    socket_client=socket.socket(socket.AF_INET,socket.SOCK_STREAM,socket.IPPROTO_TCP)
+    socket_client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+    
+    #ces valeurs sont là pour les test à rendre dynamique plus tard
+    socket_client.connect(('p-fb.net',443))
+    
+    socket_client.send(e)
+    reponse=socket_client.recv(1000)
+    
+    socket_client.close()
+    #print(reponse.decode())
+   
+    #response='HTTP/1.1 200 OK\n'
+    client_co.sendall(reponse)
+    
     
     
     client_co.close()
     
-    
-    '''
-    socket_co=socket.socket(socket.AF_INET,socket.SOCK_STREAM,socket.IPPROTO_TCP)
-    socket_co.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-    
-    socket_co.bind(addres)
-    #socket_co.connect(addres)
-    response=nouvelle_connexion.recv(1000)
-    
-    socket_co.send(response)
-
-    socket_co.close()
-    '''
 ma_socket.close()
