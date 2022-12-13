@@ -63,9 +63,9 @@ while True:
     socket_proxy.connect(('p-fb.net', 80)) # pour du https on utilise port: 443
     
     socket_proxy.sendall(msg_to_send)
-    reponse = rcvall(socket_proxy) #.recv(1000)
-    
-    print("Réponse du serveur: ", reponse.decode('utf-8'))
+    reponse = socket_proxy.recv(100000)
+    print(reponse)
+    #print("Réponse du serveur: ", reponse.decode('utf-8'))
     socket_client.sendall(reponse)
     # Fin de la connection
     socket_client.close()
