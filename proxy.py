@@ -89,7 +89,11 @@ while True:
     # On recompose le message à envoyer au serveur
     msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
-
+    
+    #On recupère le type de la requête entre GET, POST et CONNECT pour pouvoir effectuer les traitements adéquats dessus
+    lignes = request.split('\r\n')
+    '''x=get_type(lignes[0])
+    print(x)'''
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
     # Pour le moment on ignore ce cas.
