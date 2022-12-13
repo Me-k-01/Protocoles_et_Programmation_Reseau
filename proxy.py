@@ -100,10 +100,12 @@ def get_host(request):
     if request.startswith("CONNECT"): #TLS
         return (host[0].strip(), int(host[1].strip())) #443
 
-def get_type(s):
+def get_type(request):
+    lignes = request.split('\r\n')
     reg="[a-zA-Z]+ "
-    type_co=re.search(reg, s)
-    return type_co[0].rsplit()
+    type_co=re.search(reg, lignes[0])
+    if(type_co):
+        return type_co[0].rsplit()
 
 def get_config_doc(): # Renvoie le document configurator.html
     #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
@@ -133,17 +135,18 @@ while True:
     msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
     
+    request_type = get_type(request)
     #On recupère le type de la requête entre GET, POST et CONNECT pour pouvoir effectuer les traitements adéquats dessus
-    lignes = request.split('\r\n')
-    '''x=get_type(lignes[0])
-    print(x)'''
-
+    #print(request_type)
+    if(request_type):
+        if(request_type[0]=='GET'):
+            print("c'est du get")
     ##### NE PAS RETIRER AVANT D'AVOIR RESOLUE LE PROBLEME SVP #####
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
     # Pour le moment on ignore ce cas. 
     if request == "":
-        print("Requête vide")
+        #print("Requête vide")
         socket_client.close()
         continue
 
@@ -152,7 +155,7 @@ while True:
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
-    print("Addresse du serveur à joindre:", destination)
+    #print("Addresse du serveur à joindre:", destination)
     
     # Dans le cas d'un connection à config-proxy
     if (destination[0] == 'config-proxy'): 
@@ -181,7 +184,8 @@ while True:
     # TODO: Ce n'est pas une bonne pratique d'utiliser un trop gros nombre, trouver une meilleur implémentation.
     reponse = socket_proxy.recv(100000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
     
-    print("Taille de la réponse du serveur: ",len(reponse))
+    #print("Taille de la réponse du serveur: ",len(reponse))
+    #print(reponse)
 
     ############### Envoie au client de la réponse du serveur ###############
     socket_client.sendall(reponse)
