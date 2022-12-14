@@ -5,17 +5,39 @@ IP_PROXY = 'localhost'
 PORT_PROXY = 8000
 
 ############### Fonctions ###############
-'''def rcvall(socket) :
-    rep = []
+"""
+def recv_and_send(socket_src, socket_dest):
+    size = 1024
+    reponse = b'' 
 
-    while True :
-        # socket.recv(1000) est une sortie bloquante, donc ce n'est pas une bonne solutions
-        reponse = socket.recv(1000)  # TODO: trouver un moyen d'extraire l'entiereté des données d'une page web
-        if not reponse : break
-        rep.append(reponse)
-        
-    return  b''.join(rep)
-'''
+    while len(reponse) < size :  
+        reponse = socket_src.recv(size)  
+ 
+        if not reponse: 
+            return
+        socket_dest.send(reponse) 
+"""
+     
+
+
+def rcv_all(socket) :
+    res_data = b''
+    size = 4096 
+    i = 0 
+
+    while True:  
+        print(i, end=" ")
+        i+=1
+        reponse = socket.recv(size) #.decode('utf-8') 
+        if not reponse: 
+            break
+        if len(reponse) < size:
+            break
+        res_data += reponse
+ 
+    #print("end:", res_data.decode('utf-8'))
+    return res_data
+
 
 def format_request(request):
     # Isolement de chaque partie de la reponse séparé par \r\n ,
@@ -72,8 +94,8 @@ while True:
         socket_client.close()
         continue
 
-    print("Requête reçu: ", request)  
-    print("Requête à faire: ", msg_to_send)  
+    #print("Requête reçu: ", request)
+    #print("Requête à faire: ", msg_to_send)
     destination = get_host(msg_to_send) 
     print("Addresse du serveur à joindre:", destination)
     
@@ -82,9 +104,11 @@ while True:
     socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socket_proxy.connect(destination)  
     
-    socket_proxy.sendall(msg_to_send.encode('utf-8'))
+    socket_proxy.sendall(msg_to_send.encode('utf-8'))  
+    #reponse = rcv_all(socket_proxy)
     reponse = socket_proxy.recv(1000000000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
-    #print("Réponse du serveur: ", reponse.decode('utf-8'))
+    print("Réponse du serveur: ", len(reponse))
+
     socket_client.sendall(reponse)
     # Fin de la connection
     socket_client.close()
