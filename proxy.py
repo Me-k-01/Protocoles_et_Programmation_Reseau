@@ -86,7 +86,7 @@ while True:
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
     # Pour le moment on ignore ce cas.
-    if (request == ""):
+    if request == "":
         print("Requête vide")
         socket_client.close()
         continue
