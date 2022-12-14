@@ -17,7 +17,7 @@ PORT_PROXY = 8000
     return  b''.join(rep)
 '''
 
-def formatRequest(request):
+def format_request(request):
     # Isolement de chaque partie de la reponse séparé par \r\n ,
     lignes = request.split('\r\n') 
     res = []
@@ -32,15 +32,15 @@ def formatRequest(request):
         res.append(line)
     return '\r\n'.join(res)
 
-def getHost(request):
+def get_host(request):
     #firstLine = request.partition('\n')[0]
     #host = re.search('(?<=: )[^\]]+', firstLine) 
     # trouver la ligne "Host: ip:port"
     i = request.index("Host: ") + 5 
-    hostLine = request[i:]
-    hostLine = hostLine[:hostLine.index("\r\n")]
+    host_line = request[i:]
+    host_line = host_line[:host_line.index("\r\n")]
 
-    host = hostLine.split(':') 
+    host = host_line.split(':') 
     #TODO: ces valeurs sont là pour les test à rendre dynamique plus tard
     if request.startswith("GET"): # HTTP 
         return (host[0].strip(), 80)
@@ -59,9 +59,9 @@ while True:
     socket_client, addr = ma_socket.accept() # renvoie le socket du client vers le proxy
     print ("Nouvelle connexion depuis: ", addr)
 
-    request = socket_client.recv(1000).decode('utf-8')  
+    request = socket_client.recv(10000).decode('utf-8')  
     # On recompose le message à envoyer au serveur
-    msg_to_send = formatRequest(request)
+    msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
 
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
@@ -74,13 +74,13 @@ while True:
 
     print("Requête reçu: ", request)  
     print("Requête à faire: ", msg_to_send)  
-    dest = getHost(msg_to_send) 
-    print("Addresse du serveur à joindre:", dest)
+    destination = get_host(msg_to_send) 
+    print("Addresse du serveur à joindre:", destination)
     
     # Socket du proxy vers le serveur
     socket_proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    socket_proxy.connect(dest)  
+    socket_proxy.connect(destination)  
     
     socket_proxy.sendall(msg_to_send.encode('utf-8'))
     reponse = socket_proxy.recv(1000000000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
