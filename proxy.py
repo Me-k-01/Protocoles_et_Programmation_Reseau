@@ -18,24 +18,20 @@ def recv_and_send(socket_src, socket_dest):
         socket_dest.send(reponse) 
 """
      
-
-
 def rcv_all(socket) :
     res_data = b''
     size = 4096 
-    i = 0 
 
     while True:  
-        print(i, end=" ")
-        i+=1
         reponse = socket.recv(size) #.decode('utf-8') 
         if not reponse: 
             break
-        if len(reponse) < size:
-            break
         res_data += reponse
+        # Si la réponse est plus petite que la taille maximal, c'est que l'on a tout reçu
+        if len(reponse) < size: 
+            break 
  
-    #print("end:", res_data.decode('utf-8'))
+    #print("Resultat :", res_data.decode('utf-8'))
     return res_data
 
 
@@ -77,39 +73,51 @@ ma_socket.listen(socket.SOMAXCONN)
 print("Lancement du proxy:", IP_PROXY, ":", PORT_PROXY)
 
 while True:
-    # Attente d'une nouvelle connexion.
+    ############### Attente d'une nouvelle connexion. ###############
     socket_client, addr = ma_socket.accept() # renvoie le socket du client vers le proxy
     print ("Nouvelle connexion depuis: ", addr)
 
+    ############### Formatage de la requête ###############
     request = socket_client.recv(10000).decode('utf-8')  
     # On recompose le message à envoyer au serveur
     msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
 
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
-    # il faut donc trouver un moyen de garder la destination.
+    # Faut-il l'envoyer quelque pars?
     # Pour le moment on ignore ce cas.
     if (request == ""):
         print("Requête vide")
         socket_client.close()
         continue
 
-    #print("Requête reçu: ", request)
-    #print("Requête à faire: ", msg_to_send)
+    # print("Requête reçu: ", request)
+    # print("Requête à faire: ", msg_to_send)
+
+    # On récupère l'ip et le port de destination
     destination = get_host(msg_to_send) 
     print("Addresse du serveur à joindre:", destination)
     
+    ############### Transmition de la requête au serveur ###############
     # Socket du proxy vers le serveur
     socket_proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    socket_proxy.connect(destination)  
-    
+    socket_proxy.connect(destination)
+    # Envoie de la requête au serveur
     socket_proxy.sendall(msg_to_send.encode('utf-8'))  
-    #reponse = rcv_all(socket_proxy)
-    reponse = socket_proxy.recv(1000000000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
-    print("Réponse du serveur: ", len(reponse))
 
+    ############### Réception de la réponse du serveur ###############
+    # reponse = rcv_all(socket_proxy)
+    # TODO: Ce n'est pas une bonne pratique d'utiliser un trop gros nombre, trouver une meilleur implémentation.
+    reponse = socket_proxy.recv(1000000000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
+    print("Taille de la réponse du serveur: ", len(reponse))
+
+    # TODO: Éditions du document html, pour filtrer certains mots.
+    ##### À coder içi #####
+
+    ############### Envoie au client de la réponse du serveur ###############
     socket_client.sendall(reponse)
+    
     # Fin de la connection
     socket_client.close()
     
