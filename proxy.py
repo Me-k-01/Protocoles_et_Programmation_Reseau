@@ -3,6 +3,7 @@ import socket,re
 
 IP_PROXY = '' 
 PORT_PROXY = 8000
+CONFIG_DOC_PATH = './configurator.html'
 
 ############### Fonctions ###############
 """
@@ -87,6 +88,7 @@ def get_host(request):
     #firstLine = request.partition('\n')[0]
     #host = re.search('(?<=: )[^\]]+', firstLine) 
     # trouver la ligne "Host: ip:port"
+    print("request: ", request)
     i = request.index("Host: ") + 5 
     host_line = request[i:]
     host_line = host_line[:host_line.index("\r\n")]
@@ -103,9 +105,14 @@ def get_type(s):
     type_co=re.search(reg, s)
     return type_co[0].rsplit()
 
-def page_config():
-    reponse="HTTP/1.1 200\n\n<html><head><title>Configuration</title><style>textarea{resize:none;}</style></head>\n<h1 style=\"text-align=center\">Changer votre liste de mot a filtrer</h1><br/><form method=\"post\"><textarea rows=\"4\" cols=\"50\"></textarea><br/><button type=\"submit\">Valider</button></form></html>"
-    return reponse.encode()
+def get_config_doc(): # Renvoie le document configurator.html
+    header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
+    # response = "HTTP/1.1 200 OK\n\n<html><head><title>Configuration</title><style>textarea{resize:none;}</style></head>\n<h1 style=\"text-align=center\">Changer votre liste de mot a filtrer</h1><br/><form method=\"post\"><textarea rows=\"4\" cols=\"50\"></textarea><br/><button type=\"submit\">Valider</button></form></html>"
+    file = open(CONFIG_DOC_PATH,'rb') 
+    response = file.read()
+    file.close()
+
+    return (header + response).encode('utf-8')
 
 ############### Set up et démarage du proxy ###############
 ma_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -129,49 +136,54 @@ while True:
     lignes = request.split('\r\n')
     '''x=get_type(lignes[0])
     print(x)'''
+
+    ##### NE PAS RETIRER AVANT D'AVOIR RESOLUE LE PROBLEME SVP #####
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
-    # Pour le moment on ignore ce cas.
-    #if request == "":
-    #    print("Requête vide")
-    #    socket_client.close()
-    #    continue
+    # Pour le moment on ignore ce cas. 
+    if request == "":
+        print("Requête vide")
+        socket_client.close()
+        continue
 
     # print("Requête reçu: ", request)
     # print("Requête à faire: ", msg_to_send)
 
-    # On récupère l'ip et le port de destination
-    #if request != "":
+    # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
     print("Addresse du serveur à joindre:", destination)
     
-    if(destination[0]=='config-proxy'):
-        # TODO: Éditions du document html, pour filtrer certains mots.
-        ##### À coder içi #####
-        reponse=page_config()
-    else:
+    # Dans le cas d'un connection à config-proxy
+    if (destination[0] == 'config-proxy'): 
+        # On retourne le document de parametrage du proxy 
+        reponse = get_config_doc()
+        socket_client.sendall(reponse)
+        socket_client.close()
+        continue 
+    
+    # TODO: Éditions du document html, pour filtrer certains mots.
+    ##### À coder içi #####
+
     ############### Transmition de la requête au serveur ###############
     # Socket du proxy vers le serveur
-        socket_proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-        socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket_proxy.connect(destination)
-    # Envoie de la requête au serveur
-        #print(msg_to_send)
-        msg=from_url_to_chemin(msg_to_send)
-        print(msg)
-        socket_proxy.sendall(msg.encode('utf-8'))  
+    socket_proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+    socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    socket_proxy.connect(destination)
+    # Envoie de la requête au serveur 
+    msg = from_url_to_chemin(msg_to_send)
+    print(msg)
+    socket_proxy.sendall(msg.encode('utf-8'))  
 
     
     ############### Réception de la réponse du serveur ###############
-        #reponse = rcv_all(socket_proxy)
+    #reponse = rcv_all(socket_proxy)
     # TODO: Ce n'est pas une bonne pratique d'utiliser un trop gros nombre, trouver une meilleur implémentation.
-        reponse = socket_proxy.recv(100000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
-        
-        print("Taille de la réponse du serveur: ",len(reponse))
+    reponse = socket_proxy.recv(100000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
+    
+    print("Taille de la réponse du serveur: ",len(reponse))
 
     ############### Envoie au client de la réponse du serveur ###############
     socket_client.sendall(reponse)
-    
     # Fin de la connection
     socket_client.close()
     
