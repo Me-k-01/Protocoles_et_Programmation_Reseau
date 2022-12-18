@@ -35,6 +35,41 @@ def rcv_all(socket) :
     return res_data
 
 
+
+
+def from_url_to_chemin(request):
+    lignes = request.split('\r\n') 
+    hpp=re.compile(r"GET")
+    
+    msg_modifier=[]
+    res=""
+    for line in lignes :
+        if hpp.search(line) :#or hpps.search(line) :
+            
+            res=line[0:4]
+            i=13
+            while True :
+                if(line[i] == "/") :
+                    break
+                i+=1
+            res+=line[i:]
+            res=res.rstrip("1")
+            
+            res+="0"
+            msg_modifier.append(res)
+        else :
+            msg_modifier.append(line)
+
+    return "\r\n".join(msg_modifier)
+
+
+  
+        
+           
+                
+
+
+
 def format_request(request):
     # Isolement de chaque partie de la reponse séparé par \r\n ,
     lignes = request.split('\r\n') 
@@ -97,15 +132,16 @@ while True:
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
     # Pour le moment on ignore ce cas.
-    if request == "":
-        print("Requête vide")
-        socket_client.close()
-        continue
+    #if request == "":
+    #    print("Requête vide")
+    #    socket_client.close()
+    #    continue
 
     # print("Requête reçu: ", request)
     # print("Requête à faire: ", msg_to_send)
 
     # On récupère l'ip et le port de destination
+    #if request != "":
     destination = get_host(msg_to_send) 
     print("Addresse du serveur à joindre:", destination)
     
@@ -120,13 +156,18 @@ while True:
         socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         socket_proxy.connect(destination)
     # Envoie de la requête au serveur
-        socket_proxy.sendall(msg_to_send.encode('utf-8'))  
+        #print(msg_to_send)
+        msg=from_url_to_chemin(msg_to_send)
+        print(msg)
+        socket_proxy.sendall(msg.encode('utf-8'))  
 
+    
     ############### Réception de la réponse du serveur ###############
-    # reponse = rcv_all(socket_proxy)
+        #reponse = rcv_all(socket_proxy)
     # TODO: Ce n'est pas une bonne pratique d'utiliser un trop gros nombre, trouver une meilleur implémentation.
-        reponse = socket_proxy.recv(1000000000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
-        print("Taille de la réponse du serveur: ", len(reponse))
+        reponse = socket_proxy.recv(100000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
+        
+        print("Taille de la réponse du serveur: ",len(reponse))
 
     ############### Envoie au client de la réponse du serveur ###############
     socket_client.sendall(reponse)
