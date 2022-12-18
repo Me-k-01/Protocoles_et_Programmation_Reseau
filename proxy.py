@@ -106,13 +106,14 @@ def get_type(s):
     return type_co[0].rsplit()
 
 def get_config_doc(): # Renvoie le document configurator.html
-    header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
-    # response = "HTTP/1.1 200 OK\n\n<html><head><title>Configuration</title><style>textarea{resize:none;}</style></head>\n<h1 style=\"text-align=center\">Changer votre liste de mot a filtrer</h1><br/><form method=\"post\"><textarea rows=\"4\" cols=\"50\"></textarea><br/><button type=\"submit\">Valider</button></form></html>"
+    #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
+    header = b'HTTP/1.1 200 OK\n\n'
+    #response = "HTTP/1.1 200 OK\n\n<html><head><title>Configuration</title><style>textarea{resize:none;}</style></head>\n<h1 style=\"text-align=center\">Changer votre liste de mot a filtrer</h1><br/><form method=\"post\"><textarea rows=\"4\" cols=\"50\"></textarea><br/><button type=\"submit\">Valider</button></form></html>"
     file = open(CONFIG_DOC_PATH,'rb') 
     response = file.read()
     file.close()
-
-    return (header + response).encode('utf-8')
+    
+    return header + response
 
 ############### Set up et démarage du proxy ###############
 ma_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
