@@ -41,11 +41,9 @@ def format_request(request):
     res = []
     for line in lignes:
         # pour retirer les lignes commençant par Connection:keep-alive et Proxy-connection:keep_alive .  
-        if line.startswith("Connection: keep-alive"): 
-            continue
-        if line.startswith("Proxy-Connection: keep-alive") :
-            continue
-        if line.startswith("Accept-Encoding: gzip") :
+        if (line.startswith("Connection: keep-alive") or 
+            line.startswith("Proxy-Connection: keep-alive") or
+            line.startswith("Accept-Encoding: gzip")) :
             continue
         res.append(line)
     return '\r\n'.join(res)
