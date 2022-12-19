@@ -9,7 +9,7 @@ CONFIG_DOC_PATH = './configurator.html'
 ############### Fonctions ###############
 def rcv_all(socket) :
     res_data = b''
-    size = 4096 
+    size = 512
 
     while True:  
         reponse = socket.recv(size) #.decode('utf-8') 
@@ -28,12 +28,13 @@ def rcv_all(socket) :
 
 def from_url_to_chemin(request):
     lignes = request.split('\r\n') 
-    hpp=re.compile(r"GET")
+    G=re.compile(r"GET")
+    P=re.compile(r"POST")
     
     msg_modifier=[]
     res=""
     for line in lignes :
-        if hpp.search(line) :#or hpps.search(line) :
+        if G.search(line) :#or hpps.search(line) :
             
             res=line[0:4]
             i=13
@@ -42,9 +43,17 @@ def from_url_to_chemin(request):
                     break
                 i+=1
             res+=line[i:]
-            res=res.rstrip("1")
-            
-            res+="0"
+            msg_modifier.append(res)
+
+        elif P.search(line):
+
+            res=line[0:5]
+            i=14
+            while True :
+                if(line[i] == "/") :
+                    break
+                i+=1
+            res+=line[i:]
             msg_modifier.append(res)
         else :
             msg_modifier.append(line)
@@ -171,7 +180,7 @@ while True:
     
     ############### Réception de la réponse du serveur ###############
     reponse = rcv_all(socket_proxy)  
-    
+    #reponse=socket_proxy.recv(36000)
     #print("Taille de la réponse du serveur: ",len(reponse))
     #print(reponse)
 
