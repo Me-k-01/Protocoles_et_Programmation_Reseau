@@ -84,9 +84,11 @@ def get_host(request):
     host = host_line.split(':') 
     #TODO: ces valeurs sont là pour les test à rendre dynamique plus tard
     if request.startswith("GET"): # HTTP 
-        return (host[0].strip(), 80)
+        return host[0].strip(), 80
     if request.startswith("CONNECT"): #TLS
-        return (host[0].strip(), int(host[1].strip())) #443
+        return host[0].strip(), int(host[1].strip()) #443
+    if request.startswith("POST"):  
+        return host[0].strip(), 80
 
 def get_type(request):
     lignes = request.split('\r\n')
@@ -126,9 +128,9 @@ while True:
     request_type = get_type(request)
     #On recupère le type de la requête entre GET, POST et CONNECT pour pouvoir effectuer les traitements adéquats dessus
     #print(request_type)
-    if(request_type):
-        if(request_type[0]=='GET'):
-            print("c'est du get")
+    #if(request_type):
+    #    if(request_type[0] == 'GET'):
+    #        print("c'est du get")
     ##### NE PAS RETIRER AVANT D'AVOIR RESOLUE LE PROBLEME SVP #####
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
