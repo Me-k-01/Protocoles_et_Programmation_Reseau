@@ -1,38 +1,26 @@
 #!/usr/bin/python3
 import socket,re
+import sys
 
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
 
 ############### Fonctions ###############
-"""
-def recv_and_send(socket_src, socket_dest):
-    size = 1024
-    reponse = b'' 
-
-    while len(reponse) < size :  
-        reponse = socket_src.recv(size)  
- 
-        if not reponse: 
-            return
-        socket_dest.send(reponse) 
-"""
-     
 def rcv_all(socket) :
     res_data = b''
     size = 4096 
 
     while True:  
         reponse = socket.recv(size) #.decode('utf-8') 
-        if not reponse: 
+        #socket.sendall(b'')
+        if not reponse:  
             break
         res_data += reponse
         # Si la réponse est plus petite que la taille maximal, c'est que l'on a tout reçu
-        if len(reponse) < size: 
-            break 
- 
-    #print("Resultat :", res_data.decode('utf-8'))
+        if len(reponse) < size:  
+            break
+
     return res_data
 
 
@@ -88,7 +76,7 @@ def get_host(request):
     #firstLine = request.partition('\n')[0]
     #host = re.search('(?<=: )[^\]]+', firstLine) 
     # trouver la ligne "Host: ip:port"
-    print("request: ", request)
+    #print("request: ", request)
     i = request.index("Host: ") + 5 
     host_line = request[i:]
     host_line = host_line[:host_line.index("\r\n")]
@@ -112,7 +100,7 @@ def get_config_doc(): # Renvoie le document configurator.html
     file = open(CONFIG_DOC_PATH,'rb') 
     response = file.read()
     file.close()
-    
+
     return header + response
 
 ############### Set up et démarage du proxy ###############
@@ -147,8 +135,8 @@ while True:
         socket_client.close()
         continue
 
-    # print("Requête reçu: ", request)
-    # print("Requête à faire: ", msg_to_send)
+    print("Requête reçu: ", request)
+    print("Requête à faire: ", msg_to_send)
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
@@ -177,17 +165,14 @@ while True:
 
     
     ############### Réception de la réponse du serveur ###############
-    #reponse = rcv_all(socket_proxy)
-    # TODO: Ce n'est pas une bonne pratique d'utiliser un trop gros nombre, trouver une meilleur implémentation.
-    reponse = socket_proxy.recv(100000) # Le nombre est tres grands pour des grosses pages comme p-fb.net
+    reponse = rcv_all(socket_proxy)  
     
-    print("Taille de la réponse du serveur: ",len(reponse))
+    print("Taille de la réponse du serveur: ",  len(reponse))
 
     ############### Envoie au client de la réponse du serveur ###############
     socket_client.sendall(reponse)
     # Fin de la connection
-    socket_client.close()
-    
+    socket_client.close() 
 
 
     
