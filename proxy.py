@@ -100,11 +100,12 @@ def get_host(request):
         return host[0].strip(), 80
 
 def get_type(request):
-    lignes = request.split('\r\n')
-    reg="[a-zA-Z]+ "
-    type_co=re.search(reg, lignes[0])
-    if(type_co):
-        return type_co[0].rsplit()
+    if(request.startswith("GET")):
+        return "GET"
+    if(request.startswith("POST")):
+        return "POST"
+    if(request.startswith("CONNECT")):
+        return "CONNECT"
 
 def get_config_doc(): # Renvoie le document configurator.html
     #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
