@@ -58,6 +58,22 @@ def from_url_to_chemin(request):
 
     return "\r\n".join(msg_modifier)
 
+def faut_filtrer() :
+    try :
+        fichier=open("./wordsBlackList.txt","r")
+        
+        ligne = fichier.readline() # ligne du booleen
+
+        if(ligne == 'True') :
+            return True
+        else :
+            return False
+
+
+    except Exception :
+        print("erreur")
+        return False
+
 
   
 def filtre(request):
@@ -67,6 +83,7 @@ def filtre(request):
     try :
         fichier=open("./wordsBlackList.txt","r")
         
+        ligne = fichier.readline() # ligne du booleen
         while True :
             ligne = fichier.readline()
 
@@ -199,6 +216,7 @@ while True:
     # Envoie de la requête au serveur 
     msg = from_url_to_chemin(msg_to_send)
     html = cible_html(msg)
+    
     #print(msg)
    
     socket_proxy.sendall(msg.encode('utf-8'))  
@@ -209,7 +227,7 @@ while True:
     #reponse=socket_proxy.recv(36000)
     #print("Taille de la réponse du serveur: ",len(reponse))
 
-    if html :
+    if html and faut_filtrer():
         reponse_filtre=filtre(reponse)
     else :
         reponse_filtre=reponse
