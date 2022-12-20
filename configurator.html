@@ -73,7 +73,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background-color: #ccc;
+                background-color: var(--prim-color);
                 -webkit-transition: .4s;
                 transition: .4s;
             }
@@ -117,6 +117,7 @@
                 padding: .5em .8em;
                 border-radius: 2em;
                 max-width: 500px;
+                background-color: #222;
             }
         </style>
         <script>
@@ -133,6 +134,7 @@
         <h1>Configurateur de proxy</h1>
         <span class="separator"></span>
         <main>
+            <form action=""></form>
             <div class="flex">
                 <label for="filter">Filtrage des pages web</label>
                 <label class="switch">
@@ -140,9 +142,14 @@
                     <span class="slider round"></span> 
                 </label>
             </div>
-            <div class="flex column">
-                <label for="blacklist">Éléments à filtrer:</label>
-                <textarea name="blacklist" id="blacklist" cols="30" rows="10" onchange="updateFilterWords(this.value)">cookie</textarea>
+            <div class="flex column"> 
+                
+                <form method="post">
+                    <label for="blacklist">Éléments à filtrer:</label>
+                    <textarea name="blacklist" id="blacklist" rows="10" cols="30"></textarea>
+                    <button type="submit">Valider</button>
+                </form>
+                <!-- <textarea name="blacklist" id="blacklist" cols="30" rows="10" onchange="updateFilterWords(this.value)">cookie</textarea> -->
             </div>
         </main>
     </body>

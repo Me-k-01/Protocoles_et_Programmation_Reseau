@@ -1,6 +1,5 @@
 #!/usr/bin/python3
-import socket,re
-import sys
+import socket, re
 
 IP_PROXY = '' 
 PORT_PROXY = 8000
@@ -94,7 +93,7 @@ def get_type(request):
     lignes = request.split('\r\n')
     reg="[a-zA-Z]+ "
     type_co=re.search(reg, lignes[0])
-    if(type_co):
+    if type_co:
         return type_co[0].rsplit()
 
 def get_config_doc(): # Renvoie le document configurator.html
@@ -128,7 +127,7 @@ while True:
     request_type = get_type(request)
     #On recupère le type de la requête entre GET, POST et CONNECT pour pouvoir effectuer les traitements adéquats dessus
     #print(request_type)
-    #if(request_type):
+    #if (request_type):
     #    if(request_type[0] == 'GET'):
     #        print("c'est du get")
     ##### NE PAS RETIRER AVANT D'AVOIR RESOLUE LE PROBLEME SVP #####
@@ -153,6 +152,7 @@ while True:
         reponse = get_config_doc()
         socket_client.sendall(reponse)
         socket_client.close()
+        # TODO: traiter les updates du fichier configuration
         continue 
     
     # TODO: Éditions du document html, pour filtrer certains mots.
@@ -172,7 +172,7 @@ while True:
     ############### Réception de la réponse du serveur ###############
     reponse = rcv_all(socket_proxy)  
     
-    #print("Taille de la réponse du serveur: ",len(reponse))
+    #print("Taille de la réponse du serveur: ", len(reponse))
     #print(reponse)
 
     ############### Envoie au client de la réponse du serveur ###############
