@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+#Auteur: Auberval Florian, Behuiet Timothée, Siaudeau Romain
 import socket,re
 import sys
 
