@@ -5,7 +5,7 @@ import socket, re
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
-BLACKLIST_PATH = './wordsBlackList.txt²'
+BLACKLIST_PATH = './wordsBlackList.txt'
 
 ############### Fonctions ###############
 def rcv_all(socket) :
@@ -26,7 +26,7 @@ def rcv_all(socket) :
 
 def update_blacklist(blacklist):
     # Fonction qui édite le fichier blacklist
-    f = open(BLACKLIST_PATH, 'w')  
+    f = open(BLACKLIST_PATH, 'w') 
     f.write(blacklist)
     f.close()
 
@@ -158,17 +158,32 @@ def get_host(request):
         return host[0].strip(), 80
 
 
+def insert_ban_word(web_page): #Modifie le fichier html de la configuration du proxy pour y ajouter les mots blacklistés dans le textearea
+    liste=lecture_blacklist()
+    newliste=[]
+    for mot in liste:
+        mot=mot+'\n'#On rajoute le \n a la fin des mots bannis pour respecter la syntaxe fixé
+        newliste.append(mot) 
+    chaine="".join(newliste)
+    x=web_page.decode()
+    z=x.replace("<!-- BLACKLIST -->",chaine)
+    y=z.encode()
+    #print(y)
+    return y
+
 def get_config_doc(): # Renvoie le document configurator.html
     #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
     header = b'HTTP/1.1 200 OK\n\n'
     #response = "HTTP/1.1 200 OK\n\n<html><head><title>Configuration</title><style>textarea{resize:none;}</style></head>\n<h1 style=\"text-align=center\">Changer votre liste de mot a filtrer</h1><br/><form method=\"post\"><textarea rows=\"4\" cols=\"50\"></textarea><br/><button type=\"submit\">Valider</button></form></html>"
-    file = open(CONFIG_DOC_PATH,'rb') 
+    file = open(CONFIG_DOC_PATH,'rb')
     response = file.read()
+    reponse=insert_ban_word(response)
     file.close()
 
-    return header + response
+    return header + reponse
 
-def lecture_blacklist():
+
+def lecture_blacklist(): #Récuperation des mots bannis stockés dans le fichier texte
     file = open(BLACKLIST_PATH,'r')
     first_line=file.readline()
     liste_mot=[]
@@ -179,7 +194,7 @@ def lecture_blacklist():
         ligne=ligne.replace("\n","")
         liste_mot.append(ligne)
     file.close()
-    print(liste_mot)
+    #print(liste_mot)
     return liste_mot
 
 ############### Set up et démarage du proxy ###############
