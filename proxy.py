@@ -86,7 +86,7 @@ def faut_filtrer() :
         
         ligne = fichier.readline() # ligne du booleen
 
-        if(ligne == 'on') :
+        if re.search("on",ligne) :
             return True
         else :
             return False
@@ -178,8 +178,29 @@ def get_config_doc(): # Renvoie le document configurator.html
     file = open(CONFIG_DOC_PATH,'rb') 
     response = file.read()
     file.close()
+    file = open(BLACKLIST_PATH,"r")
 
-    return header + response
+    #inclusions des mots a bannir dans le textarea
+    switch= file.readline()
+    mots=""
+    while 1 :
+        l=file.readline()
+        if not l : break
+        mots+=l
+    
+    file.close()
+    s=re.compile("<!-- BLACKLIST -->".encode("utf-8"))
+    c=re.compile("checkstatus".encode("utf-8"))
+
+    rep=re.sub(s,mots.encode("utf-8"),response)
+   
+    if re.search("on",switch) :
+        
+        rep=re.sub(c,b"checked",rep)
+    else :
+        rep=re.sub(c,b"",rep)
+
+    return header + rep
 
 def lecture_blacklist():
     file = open(BLACKLIST_PATH,'r')
@@ -277,6 +298,7 @@ while True:
     #reponse=socket_proxy.recv(36000)
     #print("Taille de la réponse du serveur: ",len(reponse))
 
+    print(faut_filtrer())
     if html and faut_filtrer():
         reponse_filtre=filtre(reponse)
     else :
