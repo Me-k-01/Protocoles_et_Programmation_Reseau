@@ -169,7 +169,7 @@ def get_config_doc(): # Renvoie le document configurator.html
     return header + response
 
 def lecture_blacklist():
-    file = open(BAN_DOC_PATH,'r')
+    file = open(BLACKLIST_PATH,'r')
     first_line=file.readline()
     liste_mot=[]
     while 1:
