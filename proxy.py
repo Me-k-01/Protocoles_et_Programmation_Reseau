@@ -8,6 +8,13 @@ CONFIG_DOC_PATH = './configurator.html'
 BLACKLIST_PATH = './wordsBlackList.txt'
 
 ############### Fonctions ###############
+def substr_from(start_str, end_str='\r\n'):
+    #Trouve une chaines de caractères entre deux chaine de caractères 
+    i = request.index(start_str) + len(start_str)
+    str_from = request[i:]
+    sub_str = str_from[:str_from.index(end_str)] # str_from.index(end_str) = l'indice de la seconde chaine en partant de la première chaîne
+    return sub_str
+
 def rcv_all(socket) :
     res_data = b''
     size = 512
@@ -26,8 +33,11 @@ def rcv_all(socket) :
 
 def parse_config(post_request):
     # Fonction qui recupère les valeurs 
-    request.index('blacklist=')
-    request.index('filter-status=')
+    filter_status = substr_from('filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
+
+    blacklist = request[request.index('blacklist=') + len('blacklist='):] 
+    return blacklist, filter_status
+
 def update_blacklist(blacklist):
     # Fonction qui édite le fichier blacklist
     f = open(BLACKLIST_PATH, 'w')
@@ -70,7 +80,7 @@ def from_url_to_chemin(request):
 
 def faut_filtrer() :
     try :
-        fichier=open("./wordsBlackList.txt","r")
+        fichier = open("./wordsBlackList.txt","r")
         
         ligne = fichier.readline() # ligne du booleen
 
@@ -81,7 +91,7 @@ def faut_filtrer() :
 
 
     except Exception :
-        print("erreur")
+        print("erreur, pas de fichier de blacklist")
         return False
 
 
@@ -142,15 +152,13 @@ def format_request(request):
             continue
         res.append(line)
     return '\r\n'.join(res)
-
+ 
 def get_host(request):
     #firstLine = request.partition('\n')[0]
     #host = re.search('(?<=: )[^\]]+', firstLine) 
     # trouver la ligne "Host: ip:port"
-    #print("request: ", request)
-    i = request.index("Host: ") + 5 
-    host_line = request[i:]
-    host_line = host_line[:host_line.index("\r\n")]
+    #print("request: ", request) 
+    host_line = substr_from("Host: ")
 
     host = host_line.split(':') 
     #TODO: ces valeurs sont là pour les test à rendre dynamique plus tard
@@ -165,7 +173,6 @@ def get_host(request):
 def get_config_doc(): # Renvoie le document configurator.html
     #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
     header = b'HTTP/1.1 200 OK\n\n'
-    #response = "HTTP/1.1 200 OK\n\n<html><head><title>Configuration</title><style>textarea{resize:none;}</style></head>\n<h1 style=\"text-align=center\">Changer votre liste de mot a filtrer</h1><br/><form method=\"post\"><textarea rows=\"4\" cols=\"50\"></textarea><br/><button type=\"submit\">Valider</button></form></html>"
     file = open(CONFIG_DOC_PATH,'rb') 
     response = file.read()
     file.close()
@@ -199,7 +206,7 @@ while True:
     print ("Nouvelle connexion depuis: ", addr)
 
     ############### Formatage de la requête ###############
-    request = socket_client.recv(10000).decode('utf-8')  
+    request = rcv_all(socket_client).decode('utf-8')  
     # On recompose le message à envoyer au serveur
     msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
@@ -233,6 +240,10 @@ while True:
         # Si la demande est un POST, on update le filtrage
         if request.startswith('POST'):
             # TODO: traiter les updates du fichier configuration 
+            print('post: ', request)
+            blacklist, filter_status = parse_config(request)
+            print(blacklist)
+            print(filter_status)
             socket_client.sendall(b'HTTP/1.0 200 OK\n\n')
             socket_client.close()
             continue
