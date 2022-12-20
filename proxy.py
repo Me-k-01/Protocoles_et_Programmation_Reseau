@@ -46,26 +46,29 @@ def update_blacklist(filter_status, blacklist):
     f.write(blacklist)
     f.close()
 
-def from_url_to_chemin(request):
-    lignes = request.split('\r\n') 
+def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (specificite des communiquation navigateur- proxy)
+    lignes = request.split('\r\n')
+
+
     G=re.compile(r"GET")
     P=re.compile(r"POST")
     
-    msg_modifier=[]
+    msg_modifier=[]# msg  apres la convertion
     res = ""
     for line in lignes :
-        if G.search(line) :#or hpps.search(line) :
+
+        if G.search(line) :#si get
             
-            res = line[0:4]
-            i = 13
-            while True :
+            res = line[0:4]# on coserve le GET 
+            i = 13# on se place appres le http://
+            while True :#tant que je ne croise pas de /
                 if line[i] == '/' :
                     break
-                i += 1
-            res += line[i:]
+                i += 1  # je continue
+            res += line[i:] 
             msg_modifier.append(res)
 
-        elif P.search(line):
+        elif P.search(line): # meme principe que pour get mais adapter a POST
 
             res = line[0:5]
             i = 14
@@ -75,45 +78,50 @@ def from_url_to_chemin(request):
                 i+=1
             res+=line[i:]
             msg_modifier.append(res)
+
+
+
         else :
-            msg_modifier.append(line)
+            msg_modifier.append(line) # si ce n'est pas la ligne post/get on la garde telle quelle
 
     return "\r\n".join(msg_modifier)
 
-def faut_filtrer() :
+def faut_filtrer() : # finction qui revoie si on doit effectuer le filtrage
+   
+   
     try :
-        fichier = open("./wordsBlackList.txt","r")
+        fichier = open("./wordsBlackList.txt","r") # on ouvre la banList
         
         ligne = fichier.readline() # ligne du booleen
 
-        if re.search("on",ligne) :
+        if re.search("on",ligne) : # si c'est "on" il faut filtrer
             return True
-        else :
+        else : 
             return False
 
 
     except Exception :
         print("erreur, pas de fichier de blacklist")
-        return False
+        return False #si le fichier n'existe pas alors on n'a pas de mots à filtrés
 
 
   
-def filtre(request):
+def filtre(request): # la foncttions qui effectue le filtrage d'une reponse http
     doc=request.split(b"\r\n")
    
-    html= doc[len(doc)-1].decode("utf-8",errors='ignore')
+    html= doc[len(doc)-1].decode("utf-8",errors='ignore') # la derniere case du tableau contient le corp de la reponse
     try :
         fichier = open(BLACKLIST_PATH, "r")
         
         ligne = fichier.readline() # ligne du booleen
-        while True :
+        while True : # pour chaque mot de la banlist
             ligne = fichier.readline()
 
             if not ligne:
                 break
             
-            mot=re.compile(re.escape(ligne))
-            html=re.sub(mot,"###",html)
+            mot=re.compile( re.escape(ligne))
+            html=re.sub(mot,"###",html)#on filtre le corp de la reponse
     except Exception :
         print("erreur")
     
@@ -123,20 +131,24 @@ def filtre(request):
     return reponse
         
         
-def cible_html (request):
+def cible_html (request):#fonctions qui renvoie si la cible de la requete est le document html (index.html)
+    #attention la requete doit demander la resssource sur le serveur avec un chemin d'acces et pas une URL
+
     lignes = request.split('\r\n') 
     G=re.compile(r"GET")
     P=re.compile(r"POST")
-    
+    htm=re.compile(r"\.html ")
    
-    for line in lignes :
-        if G.search(line) or P.search(line):#or hpps.search(line) :
+    for line in lignes : 
+        if G.search(line) or P.search(line): # si c'es la ligne GET/POST
             i=0
-            while 1 :
-                if line[i]=="/" and line[i+1] != " ":
-                    return False
-                elif line[i]=="/" and line[i+1] == " ":
+            while 1 : # on boucle pour trouver le premeir / 
+                if re.search(htm,line) : # si on cherche un doc ****.html
                     return True
+                elif (line[i]=="/" and line[i+1] != " "): 
+                    return False
+                elif (line[i]=="/" and line[i+1] == " "):# ou si on a juste un / 
+                    return True  # alors on cible un doc html
 
                 i += 1
 
@@ -200,6 +212,8 @@ def get_config_doc(): # Renvoie le document configurator.html
     else :
         rep=re.sub(c,b"",rep)
 
+
+    
     return header + rep
 
 def lecture_blacklist():
@@ -288,7 +302,7 @@ while True:
     msg = from_url_to_chemin(msg_to_send)
     html = cible_html(msg)
     
-    #print(msg)
+    print(html)
    
     socket_proxy.sendall(msg.encode('utf-8'))  
  
@@ -298,7 +312,7 @@ while True:
     #reponse=socket_proxy.recv(36000)
     #print("Taille de la réponse du serveur: ",len(reponse))
 
-    print(faut_filtrer())
+ 
     if html and faut_filtrer():
         reponse_filtre=filtre(reponse)
     else :
