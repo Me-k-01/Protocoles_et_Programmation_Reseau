@@ -5,6 +5,7 @@ import socket, re
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
+BLACKLIST_PATH = './wordsBlackList.txt²'
 
 ############### Fonctions ###############
 def rcv_all(socket) :
@@ -23,6 +24,11 @@ def rcv_all(socket) :
 
     return res_data
 
+def update_blacklist(blacklist):
+    # Fonction qui édite le fichier blacklist
+    f = open(BLACKLIST_PATH, 'w')  
+    f.write(blacklist)
+    f.close()
 
 def from_url_to_chemin(request):
     lignes = request.split('\r\n') 
@@ -65,7 +71,7 @@ def filtre(request):
    
     html= doc[len(doc)-1].decode("utf-8",errors='ignore')
     try :
-        fichier=open("./wordsBlackList.txt","r")
+        fichier = open(BLACKLIST_PATH, "r")
         
         while True :
             ligne = fichier.readline()
@@ -210,9 +216,9 @@ while True:
     #print("Taille de la réponse du serveur: ",len(reponse))
 
     if html :
-        reponse_filtre=filtre(reponse)
+        reponse_filtre = filtre(reponse)
     else :
-        reponse_filtre=reponse
+        reponse_filtre = reponse
     #print(reponse_filtre.decode("utf-8"))
     ############### Envoie au client de la réponse du serveur ###############
     socket_client.sendall(reponse_filtre)
