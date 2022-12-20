@@ -5,6 +5,7 @@ import socket, re
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
+BAN_DOC_PATH = './wordsBlackList.txt'
 
 ############### Fonctions ###############
 def rcv_all(socket) :
@@ -162,6 +163,20 @@ def get_config_doc(): # Renvoie le document configurator.html
 
     return header + response
 
+def lecture_blacklist():
+    file = open(BAN_DOC_PATH,'r')
+    first_line=file.readline()
+    liste_mot=[]
+    while 1:
+        ligne=file.readline()
+        if not ligne:
+            break
+        ligne=ligne.replace("\n","")
+        liste_mot.append(ligne)
+    file.close()
+    print(liste_mot)
+    return liste_mot
+
 ############### Set up et démarage du proxy ###############
 ma_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
 ma_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -179,7 +194,8 @@ while True:
     # On recompose le message à envoyer au serveur
     msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
-      
+    
+    #request_type = get_type(request)
     ##### NE PAS RETIRER AVANT D'AVOIR RESOLUE LE PROBLEME SVP #####
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
@@ -207,6 +223,8 @@ while True:
     
     # TODO: Éditions du document html, pour filtrer certains mots.
     ##### À coder içi #####
+    lecture_blacklist()
+    
 
     ############### Transmition de la requête au serveur ###############
     # Socket du proxy vers le serveur
