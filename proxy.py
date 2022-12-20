@@ -36,11 +36,13 @@ def parse_config(post_request):
     filter_status = substr_from('filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
 
     blacklist = request[request.index('blacklist=') + len('blacklist='):] 
-    return blacklist, filter_status
+    return filter_status, blacklist
 
-def update_blacklist(blacklist):
+def update_blacklist(filter_status, blacklist):
     # Fonction qui édite le fichier blacklist
     f = open(BLACKLIST_PATH, 'w')
+    f.write(filter_status)
+    f.write('\n')
     f.write(blacklist)
     f.close()
 
@@ -84,7 +86,7 @@ def faut_filtrer() :
         
         ligne = fichier.readline() # ligne du booleen
 
-        if(ligne == 'True') :
+        if(ligne == 'on') :
             return True
         else :
             return False
@@ -241,9 +243,8 @@ while True:
         if request.startswith('POST'):
             # TODO: traiter les updates du fichier configuration 
             print('post: ', request)
-            blacklist, filter_status = parse_config(request)
-            print(blacklist)
-            print(filter_status)
+            filter_status, blacklist = parse_config(request)
+            update_blacklist(filter_status, blacklist)
             socket_client.sendall(b'HTTP/1.0 200 OK\n\n')
             socket_client.close()
             continue
