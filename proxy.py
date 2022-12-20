@@ -8,10 +8,10 @@ CONFIG_DOC_PATH = './configurator.html'
 BLACKLIST_PATH = './wordsBlackList.txt'
 
 ############### Fonctions ###############
-def substr_from(start_str, end_str='\r\n'):
+def substr_from(str, start_str, end_str='\r\n'):
     #Trouve une chaines de caractères entre deux chaine de caractères 
-    i = request.index(start_str) + len(start_str)
-    str_from = request[i:]
+    i = str.index(start_str) + len(start_str)
+    str_from = str[i:]
     sub_str = str_from[:str_from.index(end_str)] # str_from.index(end_str) = l'indice de la seconde chaine en partant de la première chaîne
     return sub_str
 
@@ -33,9 +33,9 @@ def rcv_all(socket) :
 
 def parse_config(post_request):
     # Fonction qui recupère les valeurs 
-    filter_status = substr_from('filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
+    filter_status = substr_from(post_request, 'filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
 
-    blacklist = request[request.index('blacklist=') + len('blacklist='):] 
+    blacklist = post_request[post_request.index('blacklist=') + len('blacklist='):] 
     return filter_status, blacklist
 
 def update_blacklist(filter_status, blacklist):
@@ -160,7 +160,7 @@ def get_host(request):
     #host = re.search('(?<=: )[^\]]+', firstLine) 
     # trouver la ligne "Host: ip:port"
     #print("request: ", request) 
-    host_line = substr_from("Host: ")
+    host_line = substr_from(request, "Host: ")
 
     host = host_line.split(':') 
     #TODO: ces valeurs sont là pour les test à rendre dynamique plus tard
