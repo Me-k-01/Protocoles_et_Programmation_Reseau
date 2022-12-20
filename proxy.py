@@ -26,7 +26,7 @@ def rcv_all(socket) :
 
 def update_blacklist(blacklist):
     # Fonction qui édite le fichier blacklist
-    f = open(BLACKLIST_PATH, 'w')  
+    f = open(BLACKLIST_PATH, 'w')
     f.write(blacklist)
     f.close()
 

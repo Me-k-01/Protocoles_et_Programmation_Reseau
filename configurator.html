@@ -8,6 +8,7 @@
             :root {
                 --bg-color: #222;
                 --prim-color: #eee;
+                --outline-color: #2f8b8b;
             } 
             * {  
                 color: var(--prim-color);
@@ -15,6 +16,36 @@
                 margin: 0;
                 padding: 0;
             }  
+            body {
+                padding-top: 2em;
+            }
+            button {
+                border: var(--prim-color) solid 5px;
+                border-radius: 1em;
+                padding: 1em;
+                background-color: var(--prim-color);
+                color: var(--bg-color);
+                cursor: pointer;
+                outline: none;
+                min-width: 170px;
+                transition: .2s;
+            }
+            button:hover, button:focus {
+                border-color: var(--outline-color); 
+            }
+            textarea {
+                margin: 2em;
+                padding: .5em .8em;
+                border-radius: 2em;
+                max-width: 500px;
+                background-color: transparent;
+                outline: none;
+                border: var(--prim-color) solid 2px;
+                transition: .2s;
+            }
+            textarea:focus {
+                border-color: var(--outline-color);
+            }
             .separator {
                 background-color: var(--prim-color);
                 width: 50%;
@@ -31,6 +62,13 @@
             h1 {
                 width: 100%;
                 text-align: center;
+                user-select: none;
+            }
+
+            form {
+                display: flex;
+                flex-direction: column; 
+                align-items: center;
             }
             label {
                 margin: 0 2em;
@@ -73,7 +111,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background-color: var(--prim-color);
+                background-color: #555;
                 -webkit-transition: .4s;
                 transition: .4s;
             }
@@ -111,14 +149,7 @@
 
             .slider.round:before {
                 border-radius: 50%;
-            } 
-            textarea {
-                margin: 2em;
-                padding: .5em .8em;
-                border-radius: 2em;
-                max-width: 500px;
-                background-color: #222;
-            }
+            }  
         </style>
         <script>
             function updateFilterState(state) {
@@ -132,27 +163,29 @@
     </head>
     <body>
         <h1>Configurateur de proxy</h1>
-        <span class="separator"></span>
-        <main>
-            <form action=""></form>
-            <div class="flex">
-                <label for="filter">Filtrage des pages web</label>
-                <label class="switch">
-                    <input type="checkbox" onclick="updateFilterState(this.checked)">
-                    <span class="slider round"></span> 
-                </label>
-            </div>
-            <div class="flex column"> 
-                
-                <form method="post">
-                    <label for="blacklist">Éléments à filtrer:</label>
-                    <textarea name="blacklist" id="blacklist" rows="10" cols="30">
-                        <!-- BLACKLIST -->
-                    </textarea>
+        <span class="separator"></span> 
+            <form method="post">
+                <main>                
+                    <div class="flex">
+                        <label for="filter">Filtrage des pages web</label>
+                        <label class="switch">
+                            <input type="checkbox" onclick="updateFilterState(this.checked)">
+                            <span class="slider round"></span> 
+                        </label>
+                    </div>
+                    <div class="flex column"> 
+        
+                            <label for="blacklist">Éléments à filtrer:</label>
+                            <textarea name="blacklist" id="blacklist" rows="10" cols="30">
+                                <!-- BLACKLIST -->
+                            </textarea>  
+                        <!-- <textarea name="blacklist" id="blacklist" cols="30" rows="10" onchange="updateFilterWords(this.value)">cookie</textarea> -->
+                    </div>
+                </main>
+                <footer>
                     <button type="submit">Valider</button>
-                </form>
-                <!-- <textarea name="blacklist" id="blacklist" cols="30" rows="10" onchange="updateFilterWords(this.value)">cookie</textarea> -->
-            </div>
-        </main>
+                </footer>
+                 
+            </form> 
     </body>
 </html>
