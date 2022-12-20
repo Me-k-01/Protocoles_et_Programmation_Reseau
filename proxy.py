@@ -208,7 +208,7 @@ while True:
     print ("Nouvelle connexion depuis: ", addr)
 
     ############### Formatage de la requête ###############
-    request = rcv_all(socket_client).decode('utf-8')  
+    request = socket_client.recv(10000).decode('utf-8')  
     # On recompose le message à envoyer au serveur
     msg_to_send = format_request(request)
     # On extrait l'adresse du serveur et le port pour se connecter dessus. 
