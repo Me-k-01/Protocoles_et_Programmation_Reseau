@@ -5,7 +5,7 @@ import socket, re
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
-BLACKLIST_PATH = './wordsBlackList.txt²'
+BLACKLIST_PATH = './wordsBlackList.txt'
 
 ############### Fonctions ###############
 def rcv_all(socket) :
@@ -24,6 +24,10 @@ def rcv_all(socket) :
 
     return res_data
 
+def parse_config(post_request):
+    # Fonction qui recupère les valeurs 
+    request.index('blacklist=')
+    request.index('filter-status=')
 def update_blacklist(blacklist):
     # Fonction qui édite le fichier blacklist
     f = open(BLACKLIST_PATH, 'w')
@@ -211,21 +215,32 @@ while True:
         continue
 
     #print("Requête reçu: ", request)
-    #print("Requête à faire: ", msg_to_send)
+    print("Requête à faire: ", msg_to_send)
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
     #print("Addresse du serveur à joindre:", destination)
     
     # Dans le cas d'un connection à config-proxy
-    if (destination[0] == 'config-proxy'): 
-        # On retourne le document de parametrage du proxy 
-        reponse = get_config_doc()
-        socket_client.sendall(reponse)
+    if destination[0] == 'config-proxy': 
+        # Si la demande est un GET, on envoie la page web
+        if request.startswith('GET'):
+            # On retourne le document de parametrage du proxy 
+            reponse = get_config_doc()
+            socket_client.sendall(reponse)
+            socket_client.close() 
+            continue 
+        # Si la demande est un POST, on update le filtrage
+        if request.startswith('POST'):
+            # TODO: traiter les updates du fichier configuration 
+            socket_client.sendall(b'HTTP/1.0 200 OK\n\n')
+            socket_client.close()
+            continue
+        # Ne reconnais pas la méthode utilisé        
+        #socket_client.sendall('HTTP/1.0 200 OK\n\n')
         socket_client.close()
-        # TODO: traiter les updates du fichier configuration
-        continue 
-    
+        continue
+
     # TODO: Éditions du document html, pour filtrer certains mots.
     ##### À coder içi #####
     lecture_blacklist()
