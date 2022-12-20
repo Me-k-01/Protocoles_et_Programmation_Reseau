@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+#Auteur: Auberval Florian, Behuiet Timothée, Siaudeau Romain
 import socket, re
 
 IP_PROXY = '' 
@@ -8,7 +9,7 @@ CONFIG_DOC_PATH = './configurator.html'
 ############### Fonctions ###############
 def rcv_all(socket) :
     res_data = b''
-    size = 4096 
+    size = 512
 
     while True:  
         reponse = socket.recv(size) #.decode('utf-8') 
@@ -27,12 +28,13 @@ def rcv_all(socket) :
 
 def from_url_to_chemin(request):
     lignes = request.split('\r\n') 
-    hpp=re.compile(r"GET")
+    G=re.compile(r"GET")
+    P=re.compile(r"POST")
     
     msg_modifier=[]
     res=""
     for line in lignes :
-        if hpp.search(line) :#or hpps.search(line) :
+        if G.search(line) :#or hpps.search(line) :
             
             res=line[0:4]
             i=13
@@ -41,9 +43,17 @@ def from_url_to_chemin(request):
                     break
                 i+=1
             res+=line[i:]
-            res=res.rstrip("1")
-            
-            res+="0"
+            msg_modifier.append(res)
+
+        elif P.search(line):
+
+            res=line[0:5]
+            i=14
+            while True :
+                if(line[i] == "/") :
+                    break
+                i+=1
+            res+=line[i:]
             msg_modifier.append(res)
         else :
             msg_modifier.append(line)
@@ -52,7 +62,54 @@ def from_url_to_chemin(request):
 
 
   
+def filtre(request) :
+
+
+    doc=request.split(b"\r\n")
+   
+    html= doc[len(doc)-1].decode("utf-8",errors='ignore')
+    try :
+        fichier=open("./wordsBlackList.txt","r")
         
+      
+        while True :
+
+            ligne = fichier.readline()
+
+            if not ligne:
+                break
+            
+            mot=re.compile(re.escape(ligne))
+
+            html=re.sub(mot,"###",html)
+    except Exception :
+        print("erreur")
+    
+    doc[len(doc)-1]=html.encode("utf-8")
+    reponse = b"\r\n".join(doc)
+
+    return reponse
+        
+        
+def cible_html (request):
+    lignes = request.split('\r\n') 
+    G=re.compile(r"GET")
+    P=re.compile(r"POST")
+    
+   
+    for line in lignes :
+        if G.search(line) or P.search(line):#or hpps.search(line) :
+            i=0
+            while 1 :
+                if(line[i]=="/" and line[i+1]!=" " ):
+                    return False
+                elif(line[i]=="/" and line[i+1]==" " ):
+                    return True
+                i+=1
+
+        
+        
+
            
                 
 
@@ -90,11 +147,12 @@ def get_host(request):
         return host[0].strip(), 80
 
 def get_type(request):
-    lignes = request.split('\r\n')
-    reg="[a-zA-Z]+ "
-    type_co=re.search(reg, lignes[0])
-    if type_co:
-        return type_co[0].rsplit()
+    if(request.startswith("GET")):
+        return "GET"
+    if(request.startswith("POST")):
+        return "POST"
+    if(request.startswith("CONNECT")):
+        return "CONNECT"
 
 def get_config_doc(): # Renvoie le document configurator.html
     #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
@@ -139,8 +197,8 @@ while True:
         socket_client.close()
         continue
 
-    print("Requête reçu: ", request)
-    print("Requête à faire: ", msg_to_send)
+    #print("Requête reçu: ", request)
+    #print("Requête à faire: ", msg_to_send)
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
@@ -165,18 +223,24 @@ while True:
     socket_proxy.connect(destination)
     # Envoie de la requête au serveur 
     msg = from_url_to_chemin(msg_to_send)
-    print(msg)
+    html = cible_html(msg)
+    #print(msg)
+   
     socket_proxy.sendall(msg.encode('utf-8'))  
-
+ 
     
     ############### Réception de la réponse du serveur ###############
     reponse = rcv_all(socket_proxy)  
-    
-    #print("Taille de la réponse du serveur: ", len(reponse))
-    #print(reponse)
+    #reponse=socket_proxy.recv(36000)
+    #print("Taille de la réponse du serveur: ",len(reponse))
 
+    if html :
+        reponse_filtre=filtre(reponse)
+    else :
+        reponse_filtre=reponse
+    #print(reponse_filtre.decode("utf-8"))
     ############### Envoie au client de la réponse du serveur ###############
-    socket_client.sendall(reponse)
+    socket_client.sendall(reponse_filtre)
     # Fin de la connection
     socket_client.close() 
 
