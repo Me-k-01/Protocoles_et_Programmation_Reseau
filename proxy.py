@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 #Auteur: Auberval Florian, Behuiet Timothée, Siaudeau Romain
 import socket, re
-
+# Pour décoder les requetes post de la pars du configurateur
+from urllib import parse
 ############### Paramètre constants ###############
 IP_PROXY = '' 
 PORT_PROXY = 8000
@@ -33,13 +34,14 @@ def rcv_all(socket) :
             break
 
     return res_data
+ 
 
 def parse_config(post_request):
     # Fonction qui recupère les valeurs 
     filter_status = substr_from(post_request, 'filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
 
     blacklist = post_request[post_request.index('blacklist=') + len('blacklist='):] 
-    print(filter_status, blacklist)
+    blacklist = parse.unquote(blacklist) 
     return filter_status, blacklist
 
 def update_blacklist(filter_status, blacklist):
@@ -54,8 +56,8 @@ def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (
     lignes = request.split('\r\n')
 
 
-    G=re.compile(r"GET")
-    P=re.compile(r"POST")
+    G = re.compile(r"GET")
+    P = re.compile(r"POST")
     
     msg_modifier=[]# msg  apres la convertion
     res = ''
@@ -77,7 +79,7 @@ def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (
             res = line[0:5]
             i = 14
             while True :
-                if line[i] == "/" :
+                if line[i] == '/' :
                     break
                 i += 1
             res += line[i:]
@@ -256,7 +258,7 @@ while True:
     # TODO: le client tente parfois d'actualiser la page avec une requete vide, 
     # Faut-il l'envoyer quelque pars?
     # Pour le moment on ignore ce cas. 
-    if request == "":
+    if request == '':
         #print("Requête vide")
         socket_client.close()
         continue
