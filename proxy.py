@@ -2,17 +2,21 @@
 #Auteur: Auberval Florian, Behuiet Timothée, Siaudeau Romain
 import socket, re
 
+############### Paramètre constants ###############
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
 BLACKLIST_PATH = './wordsBlackList.txt'
+CONFIG_LINK = 'config-proxy'
 
 ############### Fonctions ###############
 def substr_from(str, start_str, end_str='\r\n'):
-    #Trouve une chaines de caractères entre deux chaine de caractères 
+    # Trouve une chaines de caractères entre deux chaine de caractères 
     i = str.index(start_str) + len(start_str)
     str_from = str[i:]
-    sub_str = str_from[:str_from.index(end_str)] # str_from.index(end_str) = l'indice de la seconde chaine en partant de la première chaîne
+    # L'indice de la seconde chaine en partant de la première chaîne
+    j = str_from.index(end_str)
+    sub_str = str_from[:j] 
     return sub_str
 
 def rcv_all(socket) :
@@ -20,8 +24,7 @@ def rcv_all(socket) :
     size = 512
 
     while True:  
-        reponse = socket.recv(size) #.decode('utf-8') 
-        #socket.sendall(b'')
+        reponse = socket.recv(size)
         if not reponse:  
             break
         res_data += reponse
@@ -36,6 +39,7 @@ def parse_config(post_request):
     filter_status = substr_from(post_request, 'filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
 
     blacklist = post_request[post_request.index('blacklist=') + len('blacklist='):] 
+    print(filter_status, blacklist)
     return filter_status, blacklist
 
 def update_blacklist(filter_status, blacklist):
@@ -82,11 +86,11 @@ def from_url_to_chemin(request):
 
 def faut_filtrer() :
     try :
-        fichier = open("./wordsBlackList.txt","r")
+        fichier = open(BLACKLIST_PATH,"r")
         
         ligne = fichier.readline() # ligne du booleen
 
-        if re.search("on",ligne) :
+        if re.search('on', ligne) :
             return True
         else :
             return False
@@ -178,42 +182,43 @@ def get_config_doc(): # Renvoie le document configurator.html
     file = open(CONFIG_DOC_PATH,'rb') 
     response = file.read()
     file.close()
-    file = open(BLACKLIST_PATH,"r")
+
+    file = open(BLACKLIST_PATH,'rb')
 
     #inclusions des mots a bannir dans le textarea
-    switch= file.readline()
-    mots=""
+    switch = file.readline()
+    blacklist = b''
     while 1 :
-        l=file.readline()
+        l = file.readline()
         if not l : break
-        mots+=l
+        blacklist += l
     
     file.close()
-    s=re.compile("<!-- BLACKLIST -->".encode("utf-8"))
-    c=re.compile("checkstatus".encode("utf-8"))
+    s = re.compile(b'<!-- BLACKLIST -->')
+    c = re.compile(b'id="filter-status"')
 
-    rep=re.sub(s,mots.encode("utf-8"),response)
-   
-    if re.search("on",switch) :
-        
-        rep=re.sub(c,b"checked",rep)
-    else :
-        rep=re.sub(c,b"",rep)
-
+    rep = re.sub(s, blacklist, response)
+    # valeur de base que la checkbox aura suivant si on filtre ou non
+    checked_value = b'checked' if re.search(b'on', switch) else b''
+ 
+    rep = re.sub(c, b'id="filter-status"' + checked_value, rep)
     return header + rep
 
-def lecture_blacklist():
-    file = open(BLACKLIST_PATH,'r')
-    first_line=file.readline()
+def read_blacklist():
+    file = open(BLACKLIST_PATH, 'r')
+    # On skip le premier mot
+    file.readline()  
+
     liste_mot=[]
     while 1:
-        ligne=file.readline()
+        ligne = file.readline()
         if not ligne:
             break
-        ligne=ligne.replace("\n","")
+        ligne = ligne.replace('\n', '')
         liste_mot.append(ligne)
+
     file.close()
-    print(liste_mot)
+     
     return liste_mot
 
 ############### Set up et démarage du proxy ###############
@@ -244,15 +249,15 @@ while True:
         socket_client.close()
         continue
 
-    #print("Requête reçu: ", request)
-    print("Requête à faire: ", msg_to_send)
+    #print("Requête reçu: \n", request)
+    print("Requête à faire: \n", msg_to_send)
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
-    #print("Addresse du serveur à joindre:", destination)
+    print("Addresse du serveur à joindre:", destination)
     
     # Dans le cas d'un connection à config-proxy
-    if destination[0] == 'config-proxy': 
+    if destination[0] == CONFIG_LINK: 
         # Si la demande est un GET, on envoie la page web
         if request.startswith('GET'):
             # On retourne le document de parametrage du proxy 
@@ -276,7 +281,7 @@ while True:
 
     # TODO: Éditions du document html, pour filtrer certains mots.
     ##### À coder içi #####
-    lecture_blacklist()
+    read_blacklist()
     
 
     ############### Transmition de la requête au serveur ###############
