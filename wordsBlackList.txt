@@ -1,4 +1,2 @@
 True
-test
-de
-blacklist
+enseignant

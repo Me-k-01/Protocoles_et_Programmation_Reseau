@@ -28,6 +28,10 @@ def init_blacklist():
             line = file.readline()
             if not line:
                 break 
+            line = line.strip()
+            if line == '':
+                break
+ 
             blacklist.append(line.strip()) 
         file.close()
 
@@ -134,13 +138,14 @@ def from_url_to_chemin(request):
 
 # Fonction qui effectue le filtrage d'une reponse http
 def filter(request):
+    global blacklist
     doc = request.split(b'\r\n')
    
     # La derniere case du tableau contient le corps de la reponse
     html = doc[-1].decode('utf-8', errors='ignore')
 
     # pour chaque mot de la blacklist
-    for line in blacklist:
+    for line in blacklist: 
         word = re.compile(re.escape(line))
         html = re.sub(word, CENSOR_REPLACEMENT, html) # on filtre le corps de la reponse
     
