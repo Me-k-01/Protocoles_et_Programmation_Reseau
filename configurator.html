@@ -8,7 +8,7 @@
             :root {
                 --bg-color: #222;
                 --prim-color: #eee;
-                --outline-color: #2f8b8b;
+                --outline-color: 2196F3;
             } 
             * {  
                 color: var(--prim-color);
@@ -129,11 +129,11 @@
             }
 
             input:checked + .slider {
-                background-color: #2196F3;
+                background-color: var(--outline-color);
             }
 
             input:focus + .slider {
-                box-shadow: 0 0 1px #2196F3;
+                box-shadow: 0 0 1px var(--outline-color);
             }
 
             input:checked + .slider:before {
