@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 #Auteur: Auberval Florian, Behuiet Timothée, Siaudeau Romain
+
 import socket, re
-# Pour décoder les requetes post de la pars du configurateur
-from urllib import parse
+from urllib import parse # Pour décoder les requetes post de la pars du configurateur
+
 ############### Paramètre constants ###############
 IP_PROXY = '' 
 PORT_PROXY = 8000
@@ -10,13 +11,15 @@ CONFIG_DOC_PATH = './configurator.html'
 BLACKLIST_PATH = './wordsBlackList.txt'
 CONFIG_LINK = 'config-proxy'
 
+
 ############### Fonctions ###############
-def substr_from(str, start_str, end_str='\r\n'):
-    # Trouve une chaines de caractères entre deux chaine de caractères 
-    i = str.index(start_str) + len(start_str)
+# Trouve une chaines de caractères entre deux chaine de caractères 
+def substr_from(str, start_str, end_str='\r\n'): 
+    i = str.index(start_str) + len(start_str) # début de chaine
     str_from = str[i:]
     # L'indice de la seconde chaine en partant de la première chaîne
-    j = str_from.index(end_str)
+    j = str_from.index(end_str) # fin de chaine
+
     sub_str = str_from[:j] 
     return sub_str
 
@@ -36,30 +39,34 @@ def rcv_all(socket) :
     return res_data
  
 
-def parse_config(post_request):
-    # Fonction qui recupère les valeurs 
-    filter_status = substr_from(post_request, 'filter-status=', '&') # Est ce que le filtre doit etre actif sur les pages
+# Fonction qui recupère les valeurs d'une requete POST, dans le cadre du configurateur.
+def parse_config(post_request): 
+    filter_status = "filter-status=on" in post_request # Est ce que le filtre doit etre actif sur les pages ?
+    blacklist = post_request[post_request.index('blacklist=') + len('blacklist='):] # Liste des mots a bannir
+    # On doit convertir la valeur, qui est encodé sous un format spécial de HTML
+    blacklist = parse.unquote(blacklist)
 
-    blacklist = post_request[post_request.index('blacklist=') + len('blacklist='):] 
-    blacklist = parse.unquote(blacklist) 
     return filter_status, blacklist
 
-def update_blacklist(filter_status, blacklist):
-    # Fonction qui édite le fichier blacklist
+# Fonction qui édite le fichier blacklist
+def update_blacklist(filter_status, blacklist): 
     f = open(BLACKLIST_PATH, 'w')
-    f.write(filter_status)
+    # Ecriture
+    f.write(str(filter_status))
     f.write('\n')
     f.write(blacklist)
+
     f.close()
 
-def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (specificite des communiquation navigateur- proxy)
+# Convertir les url en en chemin sur le serveur (specificite des communiquation navigateur- proxy)
+def from_url_to_chemin(request):
     lignes = request.split('\r\n')
 
 
     G = re.compile(r"GET")
     P = re.compile(r"POST")
     
-    msg_modifier=[]# msg  apres la convertion
+    msg_modifier=[] # msg  apres la convertion
     res = ''
     for line in lignes :
 
@@ -94,17 +101,11 @@ def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (
 
 def faut_filtrer() : # finction qui revoie si on doit effectuer le filtrage
    
-   
     try :
         fichier = open(BLACKLIST_PATH, 'r') # on ouvre la banList
-        
         ligne = fichier.readline() # ligne du booleen
 
-        if re.search('on', ligne) : # si c'est "on" il faut filtrer
-            return True
-        else : 
-            return False
-
+        return re.search('True', ligne) # retourne s'il faut trier
 
     except Exception :
         print("erreur, pas de fichier de blacklist")
@@ -142,19 +143,19 @@ def cible_html (request):#fonctions qui renvoie si la cible de la requete est le
     #attention la requete doit demander la resssource sur le serveur avec un chemin d'acces et pas une URL
 
     lignes = request.split('\r\n') 
-    G=re.compile(r"GET")
-    P=re.compile(r"POST")
-    htm=re.compile(r"\.html ")
+    G = re.compile(r"GET")
+    P = re.compile(r"POST")
+    htm = re.compile(r"\.html ")
    
     for line in lignes : 
         if G.search(line) or P.search(line): # si c'es la ligne GET/POST
-            i=0
+            i = 0
             while 1 : # on boucle pour trouver le premeir / 
                 if re.search(htm,line) : # si on cherche un doc ****.html
                     return True
-                elif (line[i]=="/" and line[i+1] != " "): 
+                elif line[i] == '/' and line[i+1] != ' ' : 
                     return False
-                elif (line[i]=="/" and line[i+1] == " "):# ou si on a juste un / 
+                elif line[i]=='/' and line[i+1] == ' ' :# ou si on a juste un / 
                     return True  # alors on cible un doc html
 
                 i += 1
@@ -179,26 +180,26 @@ def get_host(request):
     #host = re.search('(?<=: )[^\]]+', firstLine) 
     # trouver la ligne "Host: ip:port"
     #print("request: ", request) 
-    host_line = substr_from(request, "Host: ")
+    host_line = substr_from(request, 'Host: ')
 
     host = host_line.split(':') 
     #TODO: ces valeurs sont là pour les test à rendre dynamique plus tard
-    if request.startswith("GET"): # HTTP 
+    if request.startswith('GET'): # HTTP 
         return host[0].strip(), 80
-    if request.startswith("CONNECT"): #TLS
+    if request.startswith('CONNECT'): #TLS
         return host[0].strip(), int(host[1].strip()) #443
-    if request.startswith("POST"):  
+    if request.startswith('POST'):  
         return host[0].strip(), 80
 
 
 def get_config_doc(): # Renvoie le document configurator.html
     #header = 'HTTP/1.1 200 OK\nContent-Type: text/html<strong>\n\n</strong>'
     header = b'HTTP/1.1 200 OK\n\n'
-    file = open(CONFIG_DOC_PATH,'rb') 
+    file = open(CONFIG_DOC_PATH, 'rb') 
     response = file.read()
     file.close()
 
-    file = open(BLACKLIST_PATH,'rb')
+    file = open(BLACKLIST_PATH, 'rb')
 
     #inclusions des mots a bannir dans le textarea
     switch = file.readline()
@@ -240,12 +241,12 @@ ma_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP
 ma_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 ma_socket.bind((IP_PROXY, PORT_PROXY))
 ma_socket.listen(socket.SOMAXCONN)
-print("Lancement du proxy:", IP_PROXY, ":", PORT_PROXY)
+print('Lancement du proxy:', IP_PROXY, ':', PORT_PROXY)
 
 while True:
     ############### Attente d'une nouvelle connexion. ###############
     socket_client, addr = ma_socket.accept() # renvoie le socket du client vers le proxy
-    print ("Nouvelle connexion depuis: ", addr)
+    print('Nouvelle connexion depuis:', addr)
 
     ############### Formatage de la requête ###############
     request = socket_client.recv(10000).decode('utf-8')  
@@ -264,7 +265,7 @@ while True:
         continue
 
     #print("Requête reçu: \n", request)
-    print("Requête à faire: \n", msg_to_send)
+    print('Requête à faire: \n', msg_to_send)
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
