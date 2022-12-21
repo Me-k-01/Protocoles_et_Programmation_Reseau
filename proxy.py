@@ -58,7 +58,7 @@ def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (
     P=re.compile(r"POST")
     
     msg_modifier=[]# msg  apres la convertion
-    res = ""
+    res = ''
     for line in lignes :
 
         if G.search(line) :#si get
@@ -77,10 +77,10 @@ def from_url_to_chemin(request):#convertir les url en en chemin sur le serveur (
             res = line[0:5]
             i = 14
             while True :
-                if(line[i] == "/") :
+                if line[i] == "/" :
                     break
-                i+=1
-            res+=line[i:]
+                i += 1
+            res += line[i:]
             msg_modifier.append(res)
 
 
@@ -94,11 +94,11 @@ def faut_filtrer() : # finction qui revoie si on doit effectuer le filtrage
    
    
     try :
-        fichier = open("./wordsBlackList.txt","r") # on ouvre la banList
+        fichier = open(BLACKLIST_PATH, 'r') # on ouvre la banList
         
         ligne = fichier.readline() # ligne du booleen
 
-        if re.search("on",ligne) : # si c'est "on" il faut filtrer
+        if re.search('on', ligne) : # si c'est "on" il faut filtrer
             return True
         else : 
             return False
@@ -111,11 +111,12 @@ def faut_filtrer() : # finction qui revoie si on doit effectuer le filtrage
 
   
 def filtre(request): # la foncttions qui effectue le filtrage d'une reponse http
-    doc=request.split(b"\r\n")
+    doc = request.split(b"\r\n")
    
-    html= doc[len(doc)-1].decode("utf-8",errors='ignore') # la derniere case du tableau contient le corp de la reponse
+    # La derniere case du tableau contient le corps de la reponse
+    html = doc[-1].decode('utf-8', errors='ignore')
     try :
-        fichier = open(BLACKLIST_PATH, "r")
+        fichier = open(BLACKLIST_PATH, 'r')
         
         ligne = fichier.readline() # ligne du booleen
         while True : # pour chaque mot de la banlist
@@ -129,7 +130,7 @@ def filtre(request): # la foncttions qui effectue le filtrage d'une reponse htt
     except Exception :
         print("erreur")
     
-    doc[len(doc)-1] = html.encode("utf-8")
+    doc[-1] = html.encode('utf-8')
     reponse = b"\r\n".join(doc)
 
     return reponse
@@ -211,9 +212,8 @@ def get_config_doc(): # Renvoie le document configurator.html
 
     rep = re.sub(s, blacklist, response)
     # valeur de base que la checkbox aura suivant si on filtre ou non
-    checked_value = b'checked' if re.search(b'on', switch) else b''
- 
-    rep = re.sub(c, b'id="filter-status"' + checked_value, rep)
+    checked_value = b'checked' if re.search(b'on', switch) else b'' 
+    rep = re.sub(c, b'id="filter-status" ' + checked_value, rep)
     return header + rep
 
 def read_blacklist():
