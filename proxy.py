@@ -8,7 +8,7 @@ from urllib import parse # Pour décoder les requetes post de la pars du configu
 IP_PROXY = '' 
 PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
-BLACKLIST_PATH = './wordsBlackList.txt'
+BLACKLIST_PATH = './blacklist.txt'
 CONFIG_LINK = 'config-proxy'
 CENSOR_REPLACEMENT = '###'
 
