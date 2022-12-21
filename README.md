@@ -9,7 +9,8 @@ Il a été réalisé par:
 
 ## Procédure pour permettre la détection du proxy
 
-Pour permettre à notre proxy d'être détecté par notre navigateur, il faut que le navigateur le détecte:
+Pour permettre à notre proxy d'être détecté par notre navigateur, il faut qu'il soit bien configuré:
+Pour pouvoir utiliser notre proxy, il est neccesaire de configuré le navigateur
 
 
 ### Sur Firefox
@@ -35,6 +36,6 @@ Il peut y avoir parfois une erreur de décodage d'un octet lorsque le proxy reç
 ---
 
 ## Exemple d'utilisation
-!(configurateur)[https://media.discordapp.net/attachments/1047081966962475028/1055091157438312488/image.png?width=1774&height=1124]
+![configurateur](https://media.discordapp.net/attachments/1047081966962475028/1055091157438312488/image.png?width=1774&height=1124)
 
-!(Exemple de rendu du site p-fb.net)[https://media.discordapp.net/attachments/1047081966962475028/1055091766883274762/image.png?width=1776&height=1124]
+![Exemple de rendu du site p-fb.net](https://media.discordapp.net/attachments/1047081966962475028/1055091766883274762/image.png?width=1776&height=1124)
