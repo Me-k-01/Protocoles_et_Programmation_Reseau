@@ -10,15 +10,45 @@ PORT_PROXY = 8000
 CONFIG_DOC_PATH = './configurator.html'
 BLACKLIST_PATH = './wordsBlackList.txt'
 CONFIG_LINK = 'config-proxy'
+CENSOR_REPLACEMENT = '###'
 
+############### Variable global ###############
+is_filtering = None # Faut-il filtrer les pages avec les mots blacklisté?
+blacklist = []
+
+def init_blacklist():
+    global is_filtering, blacklist
+
+    try :
+        file = open(BLACKLIST_PATH, 'r') # on ouvre la banList
+        line = file.readline() # ligne du booleen
+        is_filtering = re.search('True', line) # On update s'il faut filtrer ou non
+        # Lecture de chaques mots censurés
+        while 1:
+            line = file.readline()
+            if not line:
+                break 
+            blacklist.append(line.strip()) 
+        file.close()
+
+    except Exception :  
+        print("erreur, pas de fichier de blacklist")
+        # Si le fichier n'existe pas alors on n'a pas de mots à filtrées
+        is_filtering = False  
+        blacklist = []
+        # Et on doit le créer, car cela posera problème par la suite
+        update_blacklist(is_filtering, '')
+
+# Initialisation des variables globales
+init_blacklist()
 
 ############### Fonctions ###############
 # Trouve une chaines de caractères entre deux chaine de caractères 
 def substr_from(str, start_str, end_str='\r\n'): 
-    i = str.index(start_str) + len(start_str) # début de chaine
+    i = str.index(start_str) + len(start_str) # début de chaîne
     str_from = str[i:]
-    # L'indice de la seconde chaine en partant de la première chaîne
-    j = str_from.index(end_str) # fin de chaine
+    # L'indice de la seconde chaîne en partant de la première chaîne
+    j = str_from.index(end_str) # fin de chaîne
 
     sub_str = str_from[:j] 
     return sub_str
@@ -41,47 +71,50 @@ def rcv_all(socket) :
 
 # Fonction qui recupère les valeurs d'une requete POST, dans le cadre du configurateur.
 def parse_config(post_request): 
-    filter_status = "filter-status=on" in post_request # Est ce que le filtre doit etre actif sur les pages ?
-    blacklist = post_request[post_request.index('blacklist=') + len('blacklist='):] # Liste des mots a bannir
+    filter_status = "filter-status=on" in post_request # Est ce que le filtre doit être actif sur les pages ? ('filter-status=on' pour oui ou rien dans la requete pour non)
+    blacklist_value = post_request[post_request.index('blacklist=') + len('blacklist='):] # Liste des mots a bannir
     # On doit convertir la valeur, qui est encodé sous un format spécial de HTML
-    blacklist = parse.unquote(blacklist)
+    blacklist_value = parse.unquote(blacklist_value)
 
-    return filter_status, blacklist
+    return filter_status, blacklist_value
 
 # Fonction qui édite le fichier blacklist
-def update_blacklist(filter_status, blacklist): 
+def update_blacklist(filter_status, blacklist_value): 
+    global is_filtering, blacklist
     f = open(BLACKLIST_PATH, 'w')
-    # Ecriture
-    f.write(str(filter_status))
-    f.write('\n')
-    f.write(blacklist)
 
+    # Ecriture dans le fichier
+    f.write(str(filter_status) + '\n') 
+    f.write(blacklist_value)
     f.close()
+
+    # Ecriture sur les variables globales
+    blacklist = blacklist_value.split('\r\n') 
+    is_filtering = filter_status 
 
 # Convertir les url en en chemin sur le serveur (specificite des communiquation navigateur- proxy)
 def from_url_to_chemin(request):
     lignes = request.split('\r\n')
 
-
     G = re.compile(r"GET")
     P = re.compile(r"POST")
     
-    msg_modifier=[] # msg  apres la convertion
+    msg_modifier = [] # msg après la convertion
     res = ''
     for line in lignes :
+        if G.search(line) : # si get
+            res = line[0:4] # on conserve le GET 
+            i = 13 # on se place après le http://
 
-        if G.search(line) :#si get
-            
-            res = line[0:4]# on coserve le GET 
-            i = 13# on se place appres le http://
-            while True :#tant que je ne croise pas de /
+            while True : # tant que je ne croise pas de /
                 if line[i] == '/' :
                     break
-                i += 1  # je continue
+                i += 1 # je continue
+
             res += line[i:] 
             msg_modifier.append(res)
 
-        elif P.search(line): # meme principe que pour get mais adapter a POST
+        elif P.search(line): # même principe que pour get mais adapter à POST
 
             res = line[0:5]
             i = 14
@@ -92,70 +125,48 @@ def from_url_to_chemin(request):
             res += line[i:]
             msg_modifier.append(res)
 
-
-
         else :
             msg_modifier.append(line) # si ce n'est pas la ligne post/get on la garde telle quelle
 
-    return "\r\n".join(msg_modifier)
-
-def faut_filtrer() : # finction qui revoie si on doit effectuer le filtrage
-   
-    try :
-        fichier = open(BLACKLIST_PATH, 'r') # on ouvre la banList
-        ligne = fichier.readline() # ligne du booleen
-
-        return re.search('True', ligne) # retourne s'il faut trier
-
-    except Exception :
-        print("erreur, pas de fichier de blacklist")
-        return False #si le fichier n'existe pas alors on n'a pas de mots à filtrés
+    return '\r\n'.join(msg_modifier)
 
 
-  
-def filtre(request): # la foncttions qui effectue le filtrage d'une reponse http
-    doc = request.split(b"\r\n")
+
+# Fonction qui effectue le filtrage d'une reponse http
+def filter(request):
+    doc = request.split(b'\r\n')
    
     # La derniere case du tableau contient le corps de la reponse
     html = doc[-1].decode('utf-8', errors='ignore')
-    try :
-        fichier = open(BLACKLIST_PATH, 'r')
-        
-        ligne = fichier.readline() # ligne du booleen
-        while True : # pour chaque mot de la banlist
-            ligne = fichier.readline()
 
-            if not ligne:
-                break
-            
-            mot=re.compile( re.escape(ligne))
-            html=re.sub(mot,"###",html)#on filtre le corp de la reponse
-    except Exception :
-        print("erreur")
+    # pour chaque mot de la blacklist
+    for line in blacklist:
+        word = re.compile(re.escape(line))
+        html = re.sub(word, CENSOR_REPLACEMENT, html) # on filtre le corps de la reponse
     
     doc[-1] = html.encode('utf-8')
-    reponse = b"\r\n".join(doc)
+    reponse = b'\r\n'.join(doc)
 
     return reponse
         
-        
-def cible_html (request):#fonctions qui renvoie si la cible de la requete est le document html (index.html)
-    #attention la requete doit demander la resssource sur le serveur avec un chemin d'acces et pas une URL
+# Fonction qui renvoie si la cible de la requete est le document html (index.html)
+def target_is_html(request):
+    # Attention la requete doit demander la ressource sur le serveur avec un chemin d'acces et non pas une URL
 
-    lignes = request.split('\r\n') 
+    lines = request.split('\r\n') 
     G = re.compile(r"GET")
     P = re.compile(r"POST")
     htm = re.compile(r"\.html ")
    
-    for line in lignes : 
+    for line in lines : 
         if G.search(line) or P.search(line): # si c'es la ligne GET/POST
             i = 0
             while 1 : # on boucle pour trouver le premeir / 
-                if re.search(htm,line) : # si on cherche un doc ****.html
+                if re.search(htm, line) : # si on cherche un doc ****.html
                     return True
                 elif line[i] == '/' and line[i+1] != ' ' : 
                     return False
-                elif line[i]=='/' and line[i+1] == ' ' :# ou si on a juste un / 
+                elif line[i] == '/' and line[i+1] == ' ' : # ou si on a juste un / 
                     return True  # alors on cible un doc html
 
                 i += 1
@@ -168,22 +179,18 @@ def format_request(request):
     res = []
     for line in lignes:
         # pour retirer les lignes commençant par Connection:keep-alive et Proxy-connection:keep_alive .  
-        if (line.startswith("Connection: keep-alive") or 
-            line.startswith("Proxy-Connection: keep-alive") or
-            line.startswith("Accept-Encoding: gzip")) :
+        if (line.startswith('Connection: keep-alive') or 
+            line.startswith('Proxy-Connection: keep-alive') or
+            line.startswith('Accept-Encoding: gzip')) :
             continue
         res.append(line)
     return '\r\n'.join(res)
  
 def get_host(request):
-    #firstLine = request.partition('\n')[0]
-    #host = re.search('(?<=: )[^\]]+', firstLine) 
-    # trouver la ligne "Host: ip:port"
-    #print("request: ", request) 
     host_line = substr_from(request, 'Host: ')
 
     host = host_line.split(':') 
-    #TODO: ces valeurs sont là pour les test à rendre dynamique plus tard
+
     if request.startswith('GET'): # HTTP 
         return host[0].strip(), 80
     if request.startswith('CONNECT'): #TLS
@@ -200,41 +207,22 @@ def get_config_doc(): # Renvoie le document configurator.html
     file.close()
 
     file = open(BLACKLIST_PATH, 'rb')
-
-    #inclusions des mots a bannir dans le textarea
-    switch = file.readline()
-    blacklist = b''
-    while 1 :
-        l = file.readline()
-        if not l : break
-        blacklist += l
-    
+ 
+     
     file.close()
     s = re.compile(b'<!-- BLACKLIST -->')
     c = re.compile(b'id="filter-status"')
 
-    rep = re.sub(s, blacklist, response)
+    # Inclusions des mots a bannir dans le textarea 
+    text_area = '\r\n'.join(blacklist) 
+    rep = re.sub(s, text_area.encode('utf-8'), response)
     # valeur de base que la checkbox aura suivant si on filtre ou non
-    checked_value = b'checked' if re.search(b'on', switch) else b'' 
+    checked_value = b'' 
+    if is_filtering :
+        checked_value = b'checked'
     rep = re.sub(c, b'id="filter-status" ' + checked_value, rep)
     return header + rep
 
-def read_blacklist():
-    file = open(BLACKLIST_PATH, 'r')
-    # On skip le premier mot
-    file.readline()  
-
-    liste_mot=[]
-    while 1:
-        ligne = file.readline()
-        if not ligne:
-            break
-        ligne = ligne.replace('\n', '')
-        liste_mot.append(ligne)
-
-    file.close()
-     
-    return liste_mot
 
 ############### Set up et démarage du proxy ###############
 ma_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -269,7 +257,7 @@ while True:
 
     # On récupère l'ip et le port de destination 
     destination = get_host(msg_to_send) 
-    print("Addresse du serveur à joindre:", destination)
+    print('Addresse du serveur à joindre:', destination)
     
     # Dans le cas d'un connection à config-proxy
     if destination[0] == CONFIG_LINK: 
@@ -281,23 +269,19 @@ while True:
             socket_client.close() 
             continue 
         # Si la demande est un POST, on update le filtrage
-        if request.startswith('POST'):
-            # TODO: traiter les updates du fichier configuration 
+        if request.startswith('POST'): 
             print('post: ', request)
-            filter_status, blacklist = parse_config(request)
-            update_blacklist(filter_status, blacklist)
+
+            filter_status, blacklist_value = parse_config(request)
+            update_blacklist(filter_status, blacklist_value)
+
             socket_client.sendall(b'HTTP/1.0 200 OK\n\n')
             socket_client.close()
             continue
         # Ne reconnais pas la méthode utilisé        
         #socket_client.sendall('HTTP/1.0 200 OK\n\n')
         socket_client.close()
-        continue
-
-    # TODO: Éditions du document html, pour filtrer certains mots.
-    ##### À coder içi #####
-    read_blacklist()
-    
+        continue    
 
     ############### Transmition de la requête au serveur ###############
     # Socket du proxy vers le serveur
@@ -305,27 +289,20 @@ while True:
     socket_proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socket_proxy.connect(destination)
     # Envoie de la requête au serveur 
-    msg = from_url_to_chemin(msg_to_send)
-    html = cible_html(msg)
-    
-    print(html)
-   
+    msg = from_url_to_chemin(msg_to_send) 
     socket_proxy.sendall(msg.encode('utf-8'))  
  
     
     ############### Réception de la réponse du serveur ###############
-    reponse = rcv_all(socket_proxy)  
-    #reponse=socket_proxy.recv(36000)
+    response = rcv_all(socket_proxy)  
     #print("Taille de la réponse du serveur: ",len(reponse))
 
  
-    if html and faut_filtrer():
-        reponse_filtre=filtre(reponse)
-    else :
-        reponse_filtre = reponse
-    #print(reponse_filtre.decode("utf-8"))
+    if target_is_html(msg) and is_filtering:
+        response = filter(response) 
+        
     ############### Envoie au client de la réponse du serveur ###############
-    socket_client.sendall(reponse_filtre)
+    socket_client.sendall(response)
     # Fin de la connection
     socket_client.close() 
 

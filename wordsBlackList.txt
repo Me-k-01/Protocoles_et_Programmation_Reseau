@@ -1,2 +1,4 @@
-False
-trs
+True
+test
+de
+blacklist
